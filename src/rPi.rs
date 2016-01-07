@@ -13,6 +13,7 @@ const BCM2708_PERI_BASE: u32 = 0x20000000;
 const GPIO_BASE: u32 = BCM2708_PERI_BASE + 0x200000;
 const O_SYNC: u32 = 1052672;
 const MAP_SHARED: i32 = 0x0001;
+const BLOCK_SIZE: usize = (4*1024);
 enum Void {} // void type
 
 struct Bcm2835Peripheral {
@@ -44,5 +45,7 @@ fn map_peripheral(foo: Bcm2835Peripheral) {
         MapOption::MapWritable,
         MapOption::MapFd(file.as_raw_fd())
     ];
+    
+    let memmap = MemoryMap::new(BLOCK_SIZE, map_opts).unwrap();
     
 }
