@@ -27,5 +27,9 @@ fn map_peripheral(foo: bcm2835_peripheral) {
                     .write(true)
                     .mode(O_SYNC)
                     .open("/dev/mem");
+    match file {
+        Ok(file) => println!("Success"),
+        Err(e) => println!("Could not open /dev/mem, are you root?")
+    }
     //Finish when you have time
 }
