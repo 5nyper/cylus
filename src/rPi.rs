@@ -29,14 +29,12 @@ fn main() {
 }
 
 fn map_peripheral(ref mut foo: &mut Bcm2835Peripheral) {
-    let file = match OpenOptions::new()
+    let file = OpenOptions::new()
                     .read(true)
                     .write(true)
                     .mode(O_SYNC)
-                    .open("/dev/mem") {
-      Ok(file) => file,
-      Err(_e) => panic!("Unable to open /dev/mem, Are you root?")
-    };
+                    .open("/dev/mem")
+                    .expect("unable to open /dev/mem, Are you root?");
     
     let map_opts = &[
         MapOption::MapNonStandardFlags(MAP_SHARED),
