@@ -1,8 +1,5 @@
-#[allow(dead_code)]
-#[allow(unused_variables)]
 extern crate mmap;
 
-use std::mem;
 use std::ptr;
 use std::fs::OpenOptions;
 use std::os::unix::fs::OpenOptionsExt;
@@ -14,8 +11,8 @@ const GPIO_BASE: u8 = (BCM2708_PERI_BASE + 0x200000) as u8;
 const O_SYNC: u32 = 1052672;
 const MAP_SHARED: i32 = 0x0001;
 const BLOCK_SIZE: usize = (4*1024);
-enum Void {} // void type
 
+#[allow(dead_code)]
 struct Bcm2835Peripheral {
     addr_p: *const u8,
     mem_fd: i32,
@@ -25,10 +22,8 @@ struct Bcm2835Peripheral {
 
 
 fn main() {
-    unsafe {
-        let gpio = Bcm2835Peripheral { addr_p: &GPIO_BASE, mem_fd: 0, map: MemoryMap::new(1024, &[]).unwrap(), addr: ptr::null_mut()};
-        map_peripheral(gpio);
-    }
+    let gpio = Bcm2835Peripheral { addr_p: &GPIO_BASE, mem_fd: 0, map: MemoryMap::new(1024, &[]).unwrap(), addr: ptr::null_mut()};
+    map_peripheral(gpio);
 }
 
 fn map_peripheral(mut foo: Bcm2835Peripheral) {
@@ -38,7 +33,7 @@ fn map_peripheral(mut foo: Bcm2835Peripheral) {
                     .mode(O_SYNC)
                     .open("/dev/mem") {
       Ok(file) => file,
-      Err(e) => panic!("Unable to open /dev/mem, Are you root?")
+      Err(_e) => panic!("Unable to open /dev/mem, Are you root?")
     };
     
     let map_opts = &[
