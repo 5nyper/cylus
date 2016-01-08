@@ -10,28 +10,26 @@ use mmap::{MemoryMap, MapOption};
 use std::os::unix::prelude::AsRawFd;
 
 const BCM2708_PERI_BASE: u32 = 0x20000000;
-const GPIO_BASE: u32 = BCM2708_PERI_BASE + 0x200000;
+const GPIO_BASE: u8 = (BCM2708_PERI_BASE + 0x200000) as u8;
 const O_SYNC: u32 = 1052672;
 const MAP_SHARED: i32 = 0x0001;
 const BLOCK_SIZE: usize = (4*1024);
-enum Void {} // void type
 
 struct Bcm2835Peripheral {
-    addr_p: u32,
+    addr_p: *const u8,
     mem_fd: i32,
-    map: *mut Void,
+    map: mmap::MemoryMap,
     addr: *mut i32
 }
 
-
 fn main() {
     unsafe {
-        let gpio = Bcm2835Peripheral { addr_p: GPIO_BASE, mem_fd: 0, map: mem::uninitialized(), addr: ptr::null_mut()};
+        let gpio = Bcm2835Peripheral { addr_p: &GPIO_BASE, mem_fd: 0, map: MemoryMap::new(1024, &[]).unwrap(), addr: ptr::null_mut()};
         map_peripheral(gpio);
     }
 }
 
-fn map_peripheral(foo: Bcm2835Peripheral) {
+fn map_peripheral(mut foo: Bcm2835Peripheral) {
     let file = OpenOptions::new()
                     .read(true)
                     .write(true)
@@ -43,9 +41,10 @@ fn map_peripheral(foo: Bcm2835Peripheral) {
         MapOption::MapNonStandardFlags(MAP_SHARED),
         MapOption::MapReadable,
         MapOption::MapWritable,
+       // MapOption::MapAddr(foo.addr_p),
         MapOption::MapFd(file.as_raw_fd())
     ];
     
-    let memmap = MemoryMap::new(BLOCK_SIZE, map_opts).unwrap();
-    
+   let mmap = MemoryMap::new(BLOCK_SIZE, map_opts).expect("Unable to MemoryMap");
+   foo.map = mmap;
 }
