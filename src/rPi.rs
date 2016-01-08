@@ -14,13 +14,15 @@ const GPIO_BASE: u8 = (BCM2708_PERI_BASE + 0x200000) as u8;
 const O_SYNC: u32 = 1052672;
 const MAP_SHARED: i32 = 0x0001;
 const BLOCK_SIZE: usize = (4*1024);
+enum Void {} // void type
 
 struct Bcm2835Peripheral {
     addr_p: *const u8,
     mem_fd: i32,
     map: mmap::MemoryMap,
-    addr: *mut i32
+    addr: *mut u8
 }
+
 
 fn main() {
     unsafe {
@@ -30,12 +32,14 @@ fn main() {
 }
 
 fn map_peripheral(mut foo: Bcm2835Peripheral) {
-    let file = OpenOptions::new()
+    let file = match OpenOptions::new()
                     .read(true)
                     .write(true)
                     .mode(O_SYNC)
-                    .open("/dev/mem")
-                    .expect("Unable to open /dev/mem/, Are you root?");
+                    .open("/dev/mem") {
+      Ok(file) => file,
+      Err(e) => panic!("Unable to open /dev/mem, Are you root?")
+    };
     
     let map_opts = &[
         MapOption::MapNonStandardFlags(MAP_SHARED),
@@ -45,6 +49,11 @@ fn map_peripheral(mut foo: Bcm2835Peripheral) {
         MapOption::MapFd(file.as_raw_fd())
     ];
     
-   let mmap = MemoryMap::new(BLOCK_SIZE, map_opts).expect("Unable to MemoryMap");
-   foo.map = mmap;
+   let mmap = match MemoryMap::new(BLOCK_SIZE, map_opts) {
+     Ok(mmap) => mmap,
+     Err(e) => panic!("ERR: {}", e)
+    };
+    foo.map = mmap;
+    foo.addr = foo.map.data();
+    println!("{:?}", foo.map.data());
 }
