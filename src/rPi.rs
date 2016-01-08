@@ -15,18 +15,19 @@ const BLOCK_SIZE: usize = (4*1024);
 #[allow(dead_code)]
 struct Bcm2835Peripheral {
     addr_p: *const u8,
-    mem_fd: i32,
+    mem_fd: std::fs::File,
     map: mmap::MemoryMap,
     addr: *mut u8
 }
 
 
 fn main() {
-    let gpio = Bcm2835Peripheral { addr_p: &GPIO_BASE, mem_fd: 0, map: MemoryMap::new(1024, &[]).unwrap(), addr: ptr::null_mut()};
-    map_peripheral(gpio);
+    let mut gpio = Bcm2835Peripheral { addr_p: &GPIO_BASE, mem_fd: OpenOptions::new().create(true).open("temp.txt").unwrap(), map: MemoryMap::new(1024, &[]).unwrap(), addr: ptr::null_mut()};
+    map_peripheral(&mut gpio);
+    unmap_peripheral(&gpio);
 }
 
-fn map_peripheral(mut foo: Bcm2835Peripheral) {
+fn map_peripheral(ref mut foo: &mut Bcm2835Peripheral) {
     let file = match OpenOptions::new()
                     .read(true)
                     .write(true)
@@ -52,3 +53,10 @@ fn map_peripheral(mut foo: Bcm2835Peripheral) {
     foo.addr = foo.map.data();
     println!("{:?}", foo.map.data());
 }
+
+fn unmap_peripheral(foo: &Bcm2835Peripheral) { 
+    drop(&foo.mem_fd);                              //Just in case :)
+    drop(&foo.map);
+}
+
+
