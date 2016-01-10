@@ -85,3 +85,6 @@ fn set_gpio_alt(foo: &Bcm2835Peripheral, y:isize, a:u8) {
     }
 }
 
+fn set_gpio(foo: &Bcm2835Peripheral, val: *mut u8) {
+    foo.addr.offset(7) = val;                            //Invalid left-hand side assignment
+}
