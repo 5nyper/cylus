@@ -20,11 +20,16 @@ struct Bcm2835Peripheral {
     addr: *mut u8
 }
 
+impl Drop for Bcm2835Peripheral {
+    fn drop(&mut self) {
+        println!("Unmapped Peripheral {:?}", self.map.data())
+    }
+}
 
 fn main() {
     let mut gpio = Bcm2835Peripheral { addr_p: &GPIO_BASE, mem_fd: OpenOptions::new().create(true).open("temp.txt").unwrap(), map: MemoryMap::new(1024, &[]).unwrap(), addr: ptr::null_mut()};
     map_peripheral(&mut gpio);
-    unmap_peripheral(&gpio);
+    unmap_peripheral(gpio);
 }
 
 fn map_peripheral(ref mut foo: &mut Bcm2835Peripheral) {
@@ -49,13 +54,10 @@ fn map_peripheral(ref mut foo: &mut Bcm2835Peripheral) {
     };
     foo.map = mmap;
     foo.addr = foo.map.data();
-    println!("{:?}", foo.map.data());
 }
 
-fn unmap_peripheral(foo: &Bcm2835Peripheral) {
-    drop(&foo.mem_fd);
-    drop(&foo.map);
-    println!("{:?}", &foo.map.data());
+fn unmap_peripheral(foo: Bcm2835Peripheral) {
+    drop(foo);
 }
 
 fn in_gpio(foo: &Bcm2835Peripheral, y: isize) {
@@ -82,3 +84,4 @@ fn set_gpio_alt(foo: &Bcm2835Peripheral, y:isize, a:u8) {
         } << ((y % 10) * 3);
     }
 }
+
