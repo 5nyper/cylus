@@ -20,6 +20,62 @@ struct Bcm2835Peripheral {
     addr: *mut u8
 }
 
+impl Bcm2835Peripheral {
+    fn map_peripheral(&mut self) {
+        self.mem_fd = OpenOptions::new()
+                        .read(true)
+                        .write(true)
+                        .mode(O_SYNC)
+                        .open("/dev/mem")
+                        .expect("unable to open /dev/mem, Are you root?");
+
+        let map_opts = &[
+            MapOption::MapNonStandardFlags(MAP_SHARED),
+            MapOption::MapReadable,
+            MapOption::MapWritable,
+           // MapOption::MapAddr(self.addr_p),
+            MapOption::MapFd(self.mem_fd.as_raw_fd())
+        ];
+
+       let mmap = match MemoryMap::new(BLOCK_SIZE, map_opts) {
+         Ok(mmap) => mmap,
+         Err(e) => panic!("ERR: {}", e)
+        };
+        self.map = mmap;
+        self.addr = self.map.data();
+    }
+
+    fn unmap_peripheral(self) {
+        drop(self);
+    }
+
+    unsafe fn in_gpio(&self, y: isize) {
+        let k = &self.addr.offset(y/10); 
+        **k &= !(7<<(((y)%10)*3));
+    }
+
+    unsafe fn out_gpio(&self, y:isize) {
+        let k = &self.addr.offset(y/10); 
+        **k |= (7<<(((y)%10)*3));
+    }
+
+    unsafe fn set_gpio_alt(&self, y:isize, a:u8) {
+        let k = &self.addr.offset(y/10);
+        **k |= match a {
+            a if a<=3 => a+4,
+            4         => 3,
+            _         => 2,
+        } << ((y % 10) * 3);
+    }
+
+    unsafe fn set_gpio(&self, val: u8) {
+        *self.addr.offset(7) = val;
+    }
+    unsafe fn clear_gpio(&self, val: u8) {
+        *self.addr.offset(10) = val;
+    }
+}
+
 impl Drop for Bcm2835Peripheral {
     fn drop(&mut self) {
         println!("Unmapped Peripheral {:?}", self.map.data())
@@ -28,63 +84,5 @@ impl Drop for Bcm2835Peripheral {
 
 fn main() {
     let mut gpio = Bcm2835Peripheral { addr_p: &GPIO_BASE, mem_fd: OpenOptions::new().create(true).open("temp.txt").unwrap(), map: MemoryMap::new(1024, &[]).unwrap(), addr: ptr::null_mut()};
-    map_peripheral(&mut gpio);
-    unmap_peripheral(gpio);
-}
-
-fn map_peripheral(ref mut foo: &mut Bcm2835Peripheral) {
-    foo.mem_fd = OpenOptions::new()
-                    .read(true)
-                    .write(true)
-                    .mode(O_SYNC)
-                    .open("/dev/mem")
-                    .expect("unable to open /dev/mem, Are you root?");
-    
-    let map_opts = &[
-        MapOption::MapNonStandardFlags(MAP_SHARED),
-        MapOption::MapReadable,
-        MapOption::MapWritable,
-       // MapOption::MapAddr(foo.addr_p),
-        MapOption::MapFd(foo.mem_fd.as_raw_fd())
-    ];
-    
-   let mmap = match MemoryMap::new(BLOCK_SIZE, map_opts) {
-     Ok(mmap) => mmap,
-     Err(e) => panic!("ERR: {}", e)
-    };
-    foo.map = mmap;
-    foo.addr = foo.map.data();
-}
-
-fn unmap_peripheral(foo: Bcm2835Peripheral) {
-    drop(foo);
-}
-
-fn in_gpio(foo: &Bcm2835Peripheral, y: isize) {
-  unsafe {
-      let k = &foo.addr.offset(y/10); 
-      **k &= !(7<<(((y)%10)*3));
-  }
-}
-
-fn out_gpio(foo: &Bcm2835Peripheral, y:isize) {
-  unsafe {
-      let k = &foo.addr.offset(y/10); 
-      **k |= (7<<(((y)%10)*3));
-  }
-}
-
-fn set_gpio_alt(foo: &Bcm2835Peripheral, y:isize, a:u8) {
-    unsafe {
-        let k = &foo.addr.offset(y/10);
-        **k |= match a {
-            a if a<=3 => a+4,
-            4         => 3,
-            _         => 2,
-        } << ((y % 10) * 3);
-    }
-}
-
-fn set_gpio(foo: &Bcm2835Peripheral, val: *mut u8) {
-    foo.addr.offset(7) = val;                            //Invalid left-hand side assignment
+    gpio.map_peripheral();
 }
