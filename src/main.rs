@@ -24,12 +24,11 @@ struct Bcm2835Peripheral {
 fn main() {
     let mut gpio = Bcm2835Peripheral { addr_p: &GPIO_BASE, mem_fd: OpenOptions::new().create(true).open("temp.txt").unwrap(), map: MemoryMap::new(1024, &[]).unwrap(), addr: ptr::null_mut()};
     map_peripheral(&mut gpio);
-    println!("{:?}", gpio.map.data());
     unmap_peripheral(&gpio);
 }
 
 fn map_peripheral(ref mut foo: &mut Bcm2835Peripheral) {
-    let file = OpenOptions::new()
+    foo.mem_fd = OpenOptions::new()
                     .read(true)
                     .write(true)
                     .mode(O_SYNC)
@@ -41,7 +40,7 @@ fn map_peripheral(ref mut foo: &mut Bcm2835Peripheral) {
         MapOption::MapReadable,
         MapOption::MapWritable,
        // MapOption::MapAddr(foo.addr_p),
-        MapOption::MapFd(file.as_raw_fd())
+        MapOption::MapFd(foo.mem_fd.as_raw_fd())
     ];
     
    let mmap = match MemoryMap::new(BLOCK_SIZE, map_opts) {
@@ -62,6 +61,24 @@ fn unmap_peripheral(foo: &Bcm2835Peripheral) {
 fn in_gpio(foo: &Bcm2835Peripheral, y: isize) {
   unsafe {
       let k = &foo.addr.offset(y/10); 
-      **k &= (7<<(((y)%10)*3));
+      **k &= !(7<<(((y)%10)*3));
   }
+}
+
+fn out_gpio(foo: &Bcm2835Peripheral, y:isize) {
+  unsafe {
+      let k = &foo.addr.offset(y/10); 
+      **k |= (7<<(((y)%10)*3));
+  }
+}
+
+fn set_gpio_alt(foo: &Bcm2835Peripheral, y:isize, a:u8) {
+    unsafe {
+        let k = &foo.addr.offset(y/10);
+        **k |= match a {
+            a if a<=3 => a+4,
+            4         => 3,
+            _         => 2,
+        } << ((y % 10) * 3);
+    }
 }
