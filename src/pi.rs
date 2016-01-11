@@ -26,7 +26,7 @@ impl Bcm2835Peripheral {
             .write(true)
             .mode(O_SYNC)
             .open("/dev/mem")
-            .expect("unable to open /dev/mem, Are you root?");
+            .expect("unable to open /dev/mem, are you root?");
 
         let map_opts = & [
             MapOption::MapNonStandardFlags(MAP_SHARED),
