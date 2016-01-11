@@ -15,4 +15,16 @@ fn main() {
                     addr: ptr::null_mut()
     };
     gpio.map_peripheral();
+    unsafe {
+        gpio.in_gpio(4);
+        gpio.out_gpio(4);
+
+        loop {
+          gpio.set_gpio(1u8 << 4);
+          std::thread::sleep_ms(1000);
+
+          gpio.clear_gpio(1u8 << 4);
+          std::thread::sleep_ms(1000);
+      }
+  }
 }
