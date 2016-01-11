@@ -32,7 +32,7 @@ impl Bcm2835Peripheral {
             MapOption::MapNonStandardFlags(MAP_SHARED),
             MapOption::MapReadable,
             MapOption::MapWritable,
-            // MapOption::MapAddr(self.addr_p),
+            MapOption::MapAddr(self.addr_p),
             MapOption::MapFd(self.mem_fd.as_raw_fd())
         ];
 
