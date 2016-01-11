@@ -8,6 +8,11 @@ use mmap::{MemoryMap, MapOption};
 mod Pi;
 
 fn main() {
-    let mut gpio = Pi::Bcm2835Peripheral { addr_p: &Pi::GPIO_BASE, mem_fd: OpenOptions::new().create(true).open("temp.txt").unwrap(), map: MemoryMap::new(1024, &[]).unwrap(), addr: ptr::null_mut()};
+    let mut gpio = Pi::Bcm2835Peripheral { 
+                    addr_p: &Pi::GPIO_BASE, 
+                    mem_fd: OpenOptions::new().create(true).open("temp.txt").unwrap(), 
+                    map: MemoryMap::new(1024, &[]).unwrap(), 
+                    addr: ptr::null_mut()
+    };
     gpio.map_peripheral();
 }
