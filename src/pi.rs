@@ -16,7 +16,7 @@ pub struct Bcm2835Peripheral {
     pub addr_p: *const u8,
     pub mem_fd: ::std::fs::File,
     pub map: ::mmap::MemoryMap,
-    pub addr: *mut u8
+    pub addr: *mut u32
 }
 
 impl Bcm2835Peripheral {
@@ -26,13 +26,13 @@ impl Bcm2835Peripheral {
             .write(true)
             .mode(O_SYNC)
             .open("/dev/mem")
-            .expect("unable to open /dev/mem, are you root?");
+            .expect("unable to open /dev/mem, Are you root?");
 
         let map_opts = & [
             MapOption::MapNonStandardFlags(MAP_SHARED),
             MapOption::MapReadable,
             MapOption::MapWritable,
-            MapOption::MapAddr(self.addr_p),
+            // MapOption::MapAddr(self.addr_p),
             MapOption::MapFd(self.mem_fd.as_raw_fd())
         ];
 
@@ -41,34 +41,36 @@ impl Bcm2835Peripheral {
             Err(e) => panic!("ERR: {}", e)
         };
         self.map = mmap;
-        self.addr = self.map.data();
+        self.addr = self.map.data() as *mut u32;
     }
 
     pub fn unmap_peripheral(self) {
         drop(self);
     }
 
-    pub unsafe fn in_gpio( & self, y: isize) {
-        let k = & self.addr.offset(y / 10); **k &= !(7 << (((y) % 10) * 3));
+    pub unsafe fn in_gpio(&self, y: isize) {
+        let k = self.addr.offset(y / 10); 
+        *k &= !(7 << (((y) % 10) * 3));
     }
 
-    pub unsafe fn out_gpio( & self, y: isize) {
-        let k = & self.addr.offset(y / 10); **k |= (7 << (((y) % 10) * 3));
+    pub unsafe fn out_gpio(&self, y: isize) {
+        let k = self.addr.offset(y / 10); 
+        *k |= (7 << (((y) % 10) * 3));
     }
 
-    pub unsafe fn set_gpio_alt( & self, y: isize, a: u8) {
-        let k = & self.addr.offset(y / 10); **k |= match a {
-            a if a <= 3 => a + 4,
-            4 => 3,
-            _ => 2,
+    pub unsafe fn set_gpio_alt(&self, y: isize, a: u8) {
+        let k = self.addr.offset(y / 10); *k |= match a {
+            a if a <= 3 => a as u32 + 4,
+            4 => 3u32,
+            _ => 2u32,
         } << ((y % 10) * 3);
     }
 
-    pub unsafe fn set_gpio( & self, val: u8) { 
-        *self.addr.offset(7) = val;
+    pub unsafe fn set_gpio(&self, val: u8) { 
+        *self.addr.offset(7) = val as u32;
     }
-    pub unsafe fn clear_gpio( & self, val: u8) { 
-        *self.addr.offset(10) = val;
+    pub unsafe fn clear_gpio(&self, val: u8) { 
+        *self.addr.offset(10) = val as u32;
     }
 }
 
