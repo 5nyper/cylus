@@ -1,9 +1,10 @@
+#![allow(dead_code)]
 extern crate mmap;
 extern crate core;
 
 use std::fs::OpenOptions;
 use std::os::unix::fs::OpenOptionsExt;
-use mmap::{MemoryMap,MapOption};
+use mmap::{MemoryMap, MapOption};
 use std::os::unix::prelude::AsRawFd;
 use self::core::intrinsics::{volatile_load, volatile_store};
 
@@ -13,7 +14,6 @@ const O_SYNC: u32 = 1052672;
 const MAP_SHARED: i32 = 0x0001;
 const BLOCK_SIZE: usize = (4 * 1024);
 
-#[allow(dead_code)]
 pub struct Bcm2835Peripheral {
     pub addr_p: *const u8,
     pub mem_fd: ::std::fs::File,
@@ -58,7 +58,7 @@ impl Bcm2835Peripheral {
 
     pub unsafe fn out_gpio(&self, y: isize) {
         let mut k = volatile_load(self.addr.offset(y / 10)); 
-        k |= (7 << (((y) % 10) * 3));
+        k |= 7 << (((y) % 10) * 3);
         volatile_store(self.addr.offset(y / 10), k) 
     }
 
