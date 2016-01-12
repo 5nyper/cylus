@@ -43,7 +43,7 @@ impl Bcm2835Peripheral {
             Err(e) => panic!("ERR: {}", e)
         };
         self.map = mmap;
-        unsafe { volatile_store(self.addr, self.map.data() as u32); }
+        self.addr = self.map.data() as *mut u32;
     }
 
     pub fn unmap_peripheral(self) {
