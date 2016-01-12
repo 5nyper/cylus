@@ -8,7 +8,7 @@ use mmap::{MemoryMap, MapOption};
 use std::os::unix::prelude::AsRawFd;
 use self::core::intrinsics::{volatile_load, volatile_store};
 
-const BCM2708_PERI_BASE: u32 = 0x20000000;
+const BCM2708_PERI_BASE: u32 = 0x3F000000;
 pub const GPIO_BASE: u8 = (BCM2708_PERI_BASE + 0x200000) as u8;
 const O_SYNC: u32 = 1052672;
 const MAP_SHARED: i32 = 0x0001;
