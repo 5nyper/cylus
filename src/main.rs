@@ -2,21 +2,11 @@
 #![allow(deprecated)]
 extern crate mmap;
 
-use std::ptr;
-use std::fs::OpenOptions;
-use mmap::MemoryMap;
-
 #[path="pi.rs"]
 mod pi;
 
 fn main() {
-    let mut gpio = pi::Bcm2835Peripheral { 
-                    addr_p: &pi::GPIO_BASE, 
-                    mem_fd: OpenOptions::new().create(true).open("temp.txt").unwrap(), 
-                    map: MemoryMap::new(1024, &[]).unwrap(), 
-                    addr: ptr::null_mut()
-    };
-    gpio.map_peripheral();
+    let gpio = pi::Bcm2835Peripheral::new();
     unsafe {
         gpio.in_gpio(4);
         gpio.out_gpio(4);
