@@ -22,8 +22,8 @@ pub struct Bcm2835Peripheral {
 }
 
 impl Bcm2835Peripheral {
-    pub fn map_peripheral( & mut self) {
-        self.mem_fd = OpenOptions::new()
+    pub fn new() -> Bcm2835Peripheral {
+        let mem_file= OpenOptions::new()
             .read(true)
             .write(true)
             .mode(O_SYNC)
@@ -35,15 +35,19 @@ impl Bcm2835Peripheral {
             MapOption::MapReadable,
             MapOption::MapWritable,
             // MapOption::MapAddr(self.addr_p),
-            MapOption::MapFd(self.mem_fd.as_raw_fd())
+            MapOption::MapFd(mem_file.as_raw_fd())
         ];
 
         let mmap = match MemoryMap::new(BLOCK_SIZE, map_opts) {
             Ok(mmap) => mmap,
             Err(e) => panic!("ERR: {}", e)
         };
-        self.map = mmap;
-        self.addr = self.map.data() as *mut u32;
+        Bcm2835Peripheral {
+            addr_p: &GPIO_BASE,
+            mem_fd: mem_file,
+            addr: mmap.data() as *mut u32,  //switch order to avoid error of moved value `mmap`
+            map: mmap,
+        }
     }
 
     pub fn unmap_peripheral(self) {
