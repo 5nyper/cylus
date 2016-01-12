@@ -1,9 +1,11 @@
 extern crate mmap;
+extern crate core;
 
 use std::fs::OpenOptions;
 use std::os::unix::fs::OpenOptionsExt;
 use mmap::{MemoryMap,MapOption};
 use std::os::unix::prelude::AsRawFd;
+use self::core::intrinsics::{volatile_load, volatile_store};
 
 const BCM2708_PERI_BASE: u32 = 0x20000000;
 pub const GPIO_BASE: u8 = (BCM2708_PERI_BASE + 0x200000) as u8;
@@ -41,7 +43,7 @@ impl Bcm2835Peripheral {
             Err(e) => panic!("ERR: {}", e)
         };
         self.map = mmap;
-        self.addr = self.map.data() as *mut u32;
+        unsafe { volatile_store(self.addr, self.map.data() as u32); }
     }
 
     pub fn unmap_peripheral(self) {
@@ -49,33 +51,37 @@ impl Bcm2835Peripheral {
     }
 
     pub unsafe fn in_gpio(&self, y: isize) {
-        let k = self.addr.offset(y / 10); 
-        *k &= !(7 << (((y) % 10) * 3));
+        let mut k = volatile_load(self.addr.offset(y / 10)); 
+        k &= !(7 << (((y) % 10) * 3));
+        volatile_store(self.addr.offset(y / 10), k) 
     }
 
     pub unsafe fn out_gpio(&self, y: isize) {
-        let k = self.addr.offset(y / 10); 
-        *k |= (7 << (((y) % 10) * 3));
+        let mut k = volatile_load(self.addr.offset(y / 10)); 
+        k |= (7 << (((y) % 10) * 3));
+        volatile_store(self.addr.offset(y / 10), k) 
     }
 
-    pub unsafe fn set_gpio_alt(&self, y: isize, a: u8) {
-        let k = self.addr.offset(y / 10); *k |= match a {
-            a if a <= 3 => a as u32 + 4,
-            4 => 3u32,
-            _ => 2u32,
+    pub unsafe fn set_gpio_alt(&self, y: isize, a: u32) {
+        let mut k = volatile_load(self.addr.offset(y / 10));  
+        k |= match a {
+            a if a <= 3 => a + 4,
+            4 => 3,
+            _ => 2,
         } << ((y % 10) * 3);
+        volatile_store(self.addr.offset(y / 10), k) 
     }
 
-    pub unsafe fn set_gpio(&self, val: u8) { 
-        *self.addr.offset(7) = val as u32;
+    pub unsafe fn set_gpio(&self, val: u32) { 
+        volatile_store(self.addr.offset(7), val);
     }
-    pub unsafe fn clear_gpio(&self, val: u8) { 
-        *self.addr.offset(10) = val as u32;
+    pub unsafe fn clear_gpio(&self, val: u32) { 
+        volatile_store(self.addr.offset(10), val);
     }
 }
 
 impl Drop for Bcm2835Peripheral {
-    fn drop( & mut self) {
+    fn drop(&mut self) {
         println!("Unmapped Peripheral {:?}", self.map.data())
     }
 }
