@@ -1,3 +1,4 @@
+//volatile_store is the same as `*ptr = value;` (except that the optimiser won't touch it)
 #![allow(dead_code)]
 extern crate mmap;
 extern crate core;
@@ -8,33 +9,33 @@ use mmap::{MemoryMap, MapOption};
 use std::os::unix::prelude::AsRawFd;
 use self::core::intrinsics::{volatile_load, volatile_store};
 
-const BCM2708_PERI_BASE: u32 = 0x3F000000;
-pub const GPIO_BASE: u8 = (BCM2708_PERI_BASE + 0x200000) as u8;
+const BCM2708_PERI_BASE: usize = 0x3F000000;
+const GPIO_BASE: usize = BCM2708_PERI_BASE + 0x200000;
 const O_SYNC: u32 = 1052672;
 const MAP_SHARED: i32 = 0x0001;
-const BLOCK_SIZE: usize = (4 * 1024);
+const BLOCK_SIZE: usize = 4 * 1024;
 
 pub struct Bcm2835Peripheral {
-    pub addr_p: *const u8,
+    pub addr_p: *const usize,
     pub mem_fd: ::std::fs::File,
     pub map: ::mmap::MemoryMap,
-    pub addr: *mut u32
+    pub addr: *mut usize
 }
 
 impl Bcm2835Peripheral {
     pub fn new() -> Bcm2835Peripheral {
-        let mem_file= OpenOptions::new()
+        let mem_file = OpenOptions::new()
             .read(true)
             .write(true)
             .mode(O_SYNC)
             .open("/dev/mem")
             .expect("unable to open /dev/mem, Are you root?");
 
-        let map_opts = & [
+        let map_opts = &[
             MapOption::MapNonStandardFlags(MAP_SHARED),
             MapOption::MapReadable,
             MapOption::MapWritable,
-            // MapOption::MapAddr(self.addr_p),
+            MapOption::MapOffset(GPIO_BASE),
             MapOption::MapFd(mem_file.as_raw_fd())
         ];
 
@@ -42,10 +43,11 @@ impl Bcm2835Peripheral {
             Ok(mmap) => mmap,
             Err(e) => panic!("ERR: {}", e)
         };
+      
         Bcm2835Peripheral {
             addr_p: &GPIO_BASE,
             mem_fd: mem_file,
-            addr: mmap.data() as *mut u32,  //switch order to avoid error of moved value `mmap`
+            addr: mmap.data() as *mut usize,  //switch order to avoid error of moved value `mmap`
             map: mmap,
         }
     }
@@ -66,7 +68,7 @@ impl Bcm2835Peripheral {
         volatile_store(self.addr.offset(y / 10), k) 
     }
 
-    pub unsafe fn set_gpio_alt(&self, y: isize, a: u32) {
+    pub unsafe fn set_gpio_alt(&self, y: isize, a: usize) {
         let mut k = volatile_load(self.addr.offset(y / 10));  
         k |= match a {
             a if a <= 3 => a + 4,
@@ -76,10 +78,10 @@ impl Bcm2835Peripheral {
         volatile_store(self.addr.offset(y / 10), k) 
     }
 
-    pub unsafe fn set_gpio(&self, val: u32) { 
+    pub unsafe fn set_gpio(&self, val: usize) { 
         volatile_store(self.addr.offset(7), val);
     }
-    pub unsafe fn clear_gpio(&self, val: u32) { 
+    pub unsafe fn clear_gpio(&self, val: usize) { 
         volatile_store(self.addr.offset(10), val);
     }
 }
