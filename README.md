@@ -8,5 +8,5 @@
 
 #Converting into a library
 
-- [x] simple digital GPIO input
+- [x] simple digital GPIO input/output
 - [ ] add Pwm functionality
