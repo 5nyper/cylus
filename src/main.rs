@@ -12,10 +12,10 @@ fn main() {
         gpio.out_gpio(4);
 
         loop {
-          gpio.set_gpio(1u32 << 4);
+          gpio.set_gpio(1usize << 4);
           std::thread::sleep_ms(1000);
 
-          gpio.clear_gpio(1u32 << 4);
+          gpio.clear_gpio(1usize << 4);
           std::thread::sleep_ms(1000);
         }
     }
