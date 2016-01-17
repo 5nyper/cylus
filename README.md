@@ -1,5 +1,5 @@
-# rust-gpio
-######Programming the GPIO pins of the RaspberryPi using Rust by mapping to `/dev/mem`
+# Cylus
+######Library for RaspberryPi GPIO
 
 #TODO
 - [x] get Rust working on raspberrypi
