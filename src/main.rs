@@ -6,16 +6,16 @@ extern crate mmap;
 mod pi;
 
 fn main() {
+    println!("Starting...");
     let gpio = pi::Bcm2835Peripheral::new();
     unsafe {
-        gpio.in_gpio(4);
-        gpio.out_gpio(4);
-
-        loop {
-          gpio.set_gpio(1usize << 4);
+        gpio.out(4);
+        for _ in 1..10 {
+          println!("{}", gpio.read(4));
+          gpio.set(1usize << 4);
           std::thread::sleep_ms(1000);
-
-          gpio.clear_gpio(1usize << 4);
+          println!("{}", gpio.read(4));
+          gpio.clear(1usize << 4);
           std::thread::sleep_ms(1000);
         }
     }
