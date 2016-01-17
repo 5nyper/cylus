@@ -1,4 +1,3 @@
-//volatile_store is the same as `*ptr = value;` (except that the optimiser won't touch it)
 #![allow(dead_code)]
 extern crate mmap;
 extern crate core;
@@ -52,10 +51,6 @@ impl Bcm2835Peripheral {
         }
     }
 
-    pub fn unmap_peripheral(self) {
-        drop(self);
-    }
-
     pub unsafe fn in_gpio(&self, y: isize) {
         let mut k = volatile_load(self.addr.offset(y / 10)); 
         k &= !(7 << (((y) % 10) * 3));
@@ -64,7 +59,7 @@ impl Bcm2835Peripheral {
 
     pub unsafe fn out_gpio(&self, y: isize) {
         let mut k = volatile_load(self.addr.offset(y / 10)); 
-        k |= 7 << (((y) % 10) * 3);
+        k |= 1 << (((y) % 10) * 3);
         volatile_store(self.addr.offset(y / 10), k) 
     }
 
