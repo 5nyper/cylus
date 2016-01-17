@@ -10,7 +10,7 @@ extern crate cylus;
 use cylus::Cylus;
 
 fn main() {
-    let gpio = Cylus::new(24);
+    let gpio = Cylus::new(24);  // BCM Pin 24 aka GPIO5
     unsafe {
         for _ in 1..10 {
           println!("{}", gpio.read());
