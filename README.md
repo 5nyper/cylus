@@ -1,6 +1,8 @@
 # Cylus
 ######Library for RaspberryPi GPIO - [Documentation](http://stackin.money/doc/cylus/index.html)
 
+To cross-compile on RaspberryPi, follow these instructions: https://github.com/Ogeon/rust-on-raspberry-pi
+
 #Example
 
 ```rust
