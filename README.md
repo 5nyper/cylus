@@ -1,4 +1,4 @@
-# Cylus
+# Cylus [![Build status](https://api.travis-ci.org/Vikaton/cylus.svg?branch=master)](https://travis-ci.org/Vikaton/cylus)
 ######Library for RaspberryPi GPIO - [Documentation](http://stackin.money/doc/cylus/index.html)
 
 To cross-compile on RaspberryPi, follow these instructions: https://github.com/Ogeon/rust-on-raspberry-pi
