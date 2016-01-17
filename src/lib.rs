@@ -1,5 +1,5 @@
-//volatile_store is the same as `*ptr = value;` (except that the optimiser won't touch it)
 #![allow(dead_code)]
+#![feature(core_intrinsics)]
 extern crate mmap;
 extern crate core;
 
@@ -15,15 +15,16 @@ const O_SYNC: u32 = 1052672;
 const MAP_SHARED: i32 = 0x0001;
 const BLOCK_SIZE: usize = 4 * 1024;
 
-pub struct Bcm2835Peripheral {
-    pub addr_p: *const usize,
-    pub mem_fd: ::std::fs::File,
-    pub map: ::mmap::MemoryMap,
-    pub addr: *mut usize
+pub struct Cylus {
+    addr_p: *const usize,
+    mem_fd: ::std::fs::File,
+    map: ::mmap::MemoryMap,
+    addr: *mut usize,
+    pin: u32 
 }
 
-impl Bcm2835Peripheral {
-    pub fn new() -> Bcm2835Peripheral {
+impl Cylus {
+    pub fn new(x: u32) -> Cylus {
         let mem_file = OpenOptions::new()
             .read(true)
             .write(true)
@@ -44,22 +45,23 @@ impl Bcm2835Peripheral {
             Err(e) => panic!("ERR: {}", e)
         };
       
-        Bcm2835Peripheral {
+        let result = Cylus {
             addr_p: &GPIO_BASE,
             mem_fd: mem_file,
             addr: mmap.data() as *mut usize,  //switch order to avoid error of moved value `mmap`
             map: mmap,
+            pin: x
+        };
+        //setting mode for GPIO
+        unsafe {
+            let addr = result.addr.offset((x/10) as isize);
+            let mut a = volatile_load(addr); 
+            a &= !(7 << (((x) % 10) * 3));
+            a |= 1 << (((x) % 10) * 3);
+            volatile_store(addr, a);
         }
+        result
     }
-
-    pub unsafe fn out(&self, y: isize) {
-        let addr = self.addr.offset(y/10);
-        let mut a = volatile_load(addr); 
-        a &= !(7 << (((y) % 10) * 3));
-        a |= 1 << (((y) % 10) * 3);
-        volatile_store(addr, a) 
-    }
-
     pub unsafe fn set_alt(&self, y: isize, a: usize) {
         let addr = self.addr.offset(y/10);
         let mut k = volatile_load(addr);
@@ -71,22 +73,24 @@ impl Bcm2835Peripheral {
         volatile_store(addr, k) 
     }
 
-    pub unsafe fn set(&self, val: usize) { 
+    pub unsafe fn high(&self) { 
+        let val = 1usize << self.pin;
         volatile_store(self.addr.offset(7), val);
     }
-    pub unsafe fn clear(&self, val: usize) { 
+    pub unsafe fn low(&self) { 
+        let val = 1usize << self.pin;
         volatile_store(self.addr.offset(10), val);
     }
-    pub unsafe fn read(&self, y: isize) -> usize {
+    pub unsafe fn read(&self) -> usize {
         let addr = self.addr.offset(13);
         let mut k = volatile_load(addr);
-        k &= 1 << y;
+        k &= 1 << self.pin as isize;
         volatile_store(addr, k);
         return k;
     }
 }
 
-impl Drop for Bcm2835Peripheral {
+impl Drop for Cylus {
     fn drop(&mut self) {
         println!("Unmapped Peripheral {:?}", self.map.data())
     }
