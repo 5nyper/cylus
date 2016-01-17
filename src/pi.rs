@@ -1,3 +1,4 @@
+//volatile_store is the same as `*ptr = value;` (except that the optimiser won't touch it)
 #![allow(dead_code)]
 extern crate mmap;
 extern crate core;
@@ -51,33 +52,37 @@ impl Bcm2835Peripheral {
         }
     }
 
-    pub unsafe fn in_gpio(&self, y: isize) {
-        let mut k = volatile_load(self.addr.offset(y / 10)); 
-        k &= !(7 << (((y) % 10) * 3));
-        volatile_store(self.addr.offset(y / 10), k) 
+    pub unsafe fn out(&self, y: isize) {
+        let addr = self.addr.offset(y/10);
+        let mut a = volatile_load(addr); 
+        a &= !(7 << (((y) % 10) * 3));
+        a |= 1 << (((y) % 10) * 3);
+        volatile_store(addr, a) 
     }
 
-    pub unsafe fn out_gpio(&self, y: isize) {
-        let mut k = volatile_load(self.addr.offset(y / 10)); 
-        k |= 1 << (((y) % 10) * 3);
-        volatile_store(self.addr.offset(y / 10), k) 
-    }
-
-    pub unsafe fn set_gpio_alt(&self, y: isize, a: usize) {
-        let mut k = volatile_load(self.addr.offset(y / 10));  
+    pub unsafe fn set_alt(&self, y: isize, a: usize) {
+        let addr = self.addr.offset(y/10);
+        let mut k = volatile_load(addr);
         k |= match a {
             a if a <= 3 => a + 4,
             4 => 3,
             _ => 2,
         } << ((y % 10) * 3);
-        volatile_store(self.addr.offset(y / 10), k) 
+        volatile_store(addr, k) 
     }
 
-    pub unsafe fn set_gpio(&self, val: usize) { 
+    pub unsafe fn set(&self, val: usize) { 
         volatile_store(self.addr.offset(7), val);
     }
-    pub unsafe fn clear_gpio(&self, val: usize) { 
+    pub unsafe fn clear(&self, val: usize) { 
         volatile_store(self.addr.offset(10), val);
+    }
+    pub unsafe fn read(&self, y: isize) -> usize {
+        let addr = self.addr.offset(13);
+        let mut k = volatile_load(addr);
+        k &= 1 << y;
+        volatile_store(addr, k);
+        return k;
     }
 }
 
