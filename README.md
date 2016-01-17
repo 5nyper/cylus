@@ -4,4 +4,7 @@
 #TODO
 - [x] get Rust working on raspberrypi
 - [x] Read BCM2835 ARM Peripherals manual
-- [x] finish Bcm3825Peripheral struct and functions
+- [x] make it work
+#Converting into a library
+- [x] simple digital GPIO input
+- [ ] add Pwm functionality
