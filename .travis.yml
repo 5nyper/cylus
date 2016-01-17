@@ -1,8 +1,6 @@
 language: rust
 rust:
   - nightly
-  
-script: sh cross32 build
 
 notifications:
   irc: "irc.zerosec.me#main"
