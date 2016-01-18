@@ -36,6 +36,5 @@ fn main() {
 #Converting into a library
 
 - [x] simple digital GPIO input/output
-- [ ] add safe wrappers to all unsafe functions
 - [ ] add Pwm functionality
 - [ ] publish to crates.io
