@@ -62,31 +62,36 @@ impl Cylus {
         }
         result
     }
-    pub unsafe fn set_alt(&self, y: isize, a: usize) {
-        let addr = self.addr.offset(y/10);
-        let mut k = volatile_load(addr);
-        k |= match a {
-            a if a <= 3 => a + 4,
-            4 => 3,
-            _ => 2,
-        } << ((y % 10) * 3);
-        volatile_store(addr, k) 
+    pub fn set_alt(&self, a: usize) {
+        let y = self.pin as isize;
+        unsafe {
+            let addr = self.addr.offset(y/10);
+            let mut k = volatile_load(addr);
+            k |= match a {
+                a if a <= 3 => a + 4,
+                4 => 3,
+                _ => 2,
+            } << ((y % 10) * 3);
+            volatile_store(addr, k); 
+       }
     }
 
-    pub unsafe fn high(&self) { 
+    pub fn high(&self) { 
         let val = 1usize << self.pin;
-        volatile_store(self.addr.offset(7), val);
+        unsafe { volatile_store(self.addr.offset(7), val); }
     }
-    pub unsafe fn low(&self) { 
+    pub fn low(&self) { 
         let val = 1usize << self.pin;
-        volatile_store(self.addr.offset(10), val);
+        unsafe { volatile_store(self.addr.offset(10), val); }
     }
-    pub unsafe fn read(&self) -> usize {
-        let addr = self.addr.offset(13);
-        let mut k = volatile_load(addr);
-        k &= 1 << self.pin as isize;
-        volatile_store(addr, k);
-        return k;
+    pub fn read(&self) -> usize {
+        unsafe {
+            let addr = self.addr.offset(13);
+            let mut k = volatile_load(addr);
+            k &= 1 << self.pin as isize;
+            volatile_store(addr, k);
+            return k
+        }
     }
 }
 
