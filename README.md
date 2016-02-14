@@ -37,4 +37,4 @@ fn main() {
 
 - [x] simple digital GPIO input/output
 - [ ] add Pwm functionality
-- [ ] publish to crates.io
+- [x] publish to crates.io
